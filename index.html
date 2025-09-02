@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>代码输入练习</title>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #codeContainer {
+            width: 1050px;
+            height: 900px;
+
+            margin: 50px auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        #codeSnippet {
+            font-size: 24px;
+            margin-bottom: 20px;
+            white-space: pre;
+        }
+
+        #inputCode {
+            width: 1300px;
+            height: 100px;
+            font-size: 24px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            outline: none;
+            position: fixed;
+            top: 10px;
+            left: 600px;
+            overflow-y: scroll; /* 始终显示垂直滚动条 */
+
+        }
+
+        #codeText {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .correct {
+            color: green;
+        }
+
+        .incorrect {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<div id="codeContainer">
+    <div id="codeSnippet">
+        <pre id="codeText"></pre>
+    </div>
+    <!-- 添加 draggable 属性 -->
+    <textarea id="inputCode" rows="6" autocomplete="off" draggable="true"></textarea>
+</div>
+
+<script type="text/javascript">
+    const codeText = document.getElementById('codeText');
+    const inputCode = document.getElementById('inputCode');
+    let isDragging = false; // 标记是否正在拖动
+
+    let lastInput = ''; // 用于保存上一次输入
+
+    // Load code from file
+    fetch('code.txt')
+        .then(response => response.text())
+        .then(data => {
+            codeText.textContent = data;
+        })
+        .catch(error => {
+            console.error('Error loading code:', error);
+        });
+
+    inputCode.addEventListener('input', function (e) {
+        const input = this.value;
+        const code = codeText.textContent;
+
+        if (input === code.substr(0, input.length)) {
+            codeText.innerHTML = `<span class="correct">${code.substr(0, input.length)}</span>${code.substr(input.length)}`;
+            lastInput = input; // 保存当前输入
+        } else {
+            codeText.innerHTML = `<span class="incorrect">${code.substr(0, input.length)}</span>${code.substr(input.length)}`;
+        }
+    });
+
+    inputCode.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+
+            // Insert tab character or spaces
+            const spaces = '    '; // 4个空格
+            const value = this.value;
+            this.value = value.substring(0, start) + spaces + value.substring(end);
+            // Move cursor to the right position
+            this.selectionStart = this.selectionEnd = start + spaces.length;
+        }
+
+        // 根据按键移动文本框
+        const rect = inputCode.getBoundingClientRect(); // 获取文本输入框的位置信息
+        const step = 80; // 移动步长
+
+        switch (e.key) {
+            case 'ArrowUp':
+                inputCode.style.top = (rect.top - step) + 'px';
+                break;
+            case 'ArrowDown':
+                inputCode.style.top = (rect.top + step) + 'px';
+                break;
+            case 'ArrowLeft':
+                inputCode.style.left = (rect.left - step) + 'px';
+                break;
+            case 'ArrowRight':
+                inputCode.style.left = (rect.left + step) + 'px';
+                break;
+        }
+    });
+
+    // 在失去焦点时，将最后一次输入设置回输入框中
+    inputCode.addEventListener('blur', function(e) {
+        this.value = lastInput;
+    });
+
+    // 添加拖动处理程序
+    inputCode.addEventListener('dragstart', function (e) {
+        e.dataTransfer.setData('text/plain', ''); // 设置拖动数据
+        isDragging = true; // 标记正在拖动
+    });
+
+    // 在拖动结束时更新位置
+    inputCode.addEventListener('drop', function (e) {
+        const rect = inputCode.getBoundingClientRect(); // 获取文本输入框的位置信息
+        inputCode.style.position = 'fixed'; // 将输入框固定定位，以便更改位置
+        inputCode.style.left = (e.clientX - rect.width / 2) + 'px'; // 设置新位置的横坐标
+        inputCode.style.top = (e.clientY - rect.height / 2) + 'px'; // 设置新位置的纵坐标
+        isDragging = false; // 拖动结束
+    });
+
+    // 防止浏览器默认行为
+    inputCode.addEventListener('dragover', function (e) {
+        e.preventDefault();
+    });
+
+
+
+    // 监听输入框上的滚动事件
+    inputCode.addEventListener('input', function() {
+    // 将输入框的内容区域的顶部内边距设置为滚动的距离
+        this.style.paddingTop = this.scrollTop + 'px';
+    });
+
+
+
+
+
+
+
+    // 添加鼠标松开事件监听器
+    inputCode.addEventListener('mouseup', function () {
+        // 取消拖动标记
+        isDragging = false;
+    });
+
+    // 添加鼠标按下事件监听器
+    inputCode.addEventListener('mousedown', function () {
+        // 设置拖动标记
+        isDragging = true;
+    });
+
+    // 添加鼠标移动事件监听器
+    window.addEventListener('mousemove', function (e) {
+        if (isDragging) {
+            const rect = inputCode.getBoundingClientRect(); // 获取文本输入框的位置信息
+            inputCode.style.position = 'fixed'; // 将输入框固定定位，以便更改位置
+            inputCode.style.left = (e.clientX - rect.width / 2) + 'px'; // 设置新位置的横坐标
+            inputCode.style.top = (e.clientY - rect.height / 2) + 'px'; // 设置新位置的纵坐标
+        }
+    });
+</script>
+
+</body>
+</html>
